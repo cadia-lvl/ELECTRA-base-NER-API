@@ -11,7 +11,7 @@ A docterized and deployable Named Entity Recognition tool for Icelandic, using a
 4) run the following commands to deploy locally
 
 ```bash
-cd src/bertin
+cd src/bert
 make build
 make run
 ```
