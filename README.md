@@ -12,7 +12,6 @@ Github rejects >100MB files
 cd src/bertin
 make build
 make run
-# open localhost:5000
 ```
 
 This project is a minor modification to https://github.com/ditadi/ner
