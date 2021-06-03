@@ -42,34 +42,68 @@ body {
 }
 
 
-.b-loc {
+.b-location {
     background-color: deepskyblue;
 }
 
-.b-misc {
+.b-miscellaneous {
     background-color: limegreen;
 }
 
-.b-org {
+.b-organization {
     background-color: #cd7491;
 }
 
-.b-per {
+.b-person {
     background-color: #f05e0a;
 }
 
-.i-loc {
+.i-location {
     background-color: #0091ff;
 }
 
-.i-misc {
+.i-miscellaneous {
     background-color: #309430;
 }
 
-.i-org {
+.i-organization {
     background-color: #cd4a7d;
 }
 
-.i-per {
+.i-person {
     background-color: #f00a0a;
+}
+
+.b-date {
+    background-color: #fff200;
+}
+
+.i-date {
+    background-color: #eade00;
+}
+
+.b-money {
+    background-color: #00ff80;
+}
+
+.i-money {
+    background-color: #00c462;
+
+}
+
+.b-time {
+    background-color: #ff00ff;
+}
+
+.i-time {
+    background-color: #bb00bb;
+}
+
+.b-percent {
+    background-color: #80ffff;
+}
+
+.i-percent {
+    background-color: #00ffff;
+
 }
