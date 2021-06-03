@@ -1,8 +1,6 @@
-import os
 
 import torch
 import json
-
 
 def chunks(lst, n):
   """Yield successive n-sized chunks from lst."""
@@ -44,8 +42,8 @@ class ModelWrapper():
     return all_tokens, all_predictions
 
 
-def _load_pyfunc(path):
 
+def _load_pyfunc(path):
   model = AutoModelForTokenClassification.from_pretrained('/root/model/')
 
   # Load in the tokenizer

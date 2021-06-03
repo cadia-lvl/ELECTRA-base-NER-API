@@ -18,6 +18,7 @@ model = mlflow.pyfunc.load_model('./model')
 def home():
     return render_template('home.html')
 
+
 @app.route("/predict", methods=['GET', 'POST'])
 def predict():
 
@@ -35,6 +36,7 @@ def predict():
         return jsonify([predictions])
 
     return ''
+
 
 
 
@@ -59,7 +61,6 @@ def add_html_tags(predictions):
         else:
             html_text += f"{token}"
 
-    print(html_text)
     return html_text
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 # Create common environment for training and serving BERT
 
 
+
 # FROM ubuntu:18.04 AS conda-env
 
 FROM nvidia/cuda:10.2-cudnn7-devel AS conda-env
@@ -56,17 +57,16 @@ RUN /bin/bash -c "source activate mlflow-env-bert" && \
 
 # Download trained BERT pytorch model
 # RUN wget 'https://aisc-mlops-bert.s3.amazonaws.com/model.pt' -O /root/model.pt -nc
-COPY ./model/pytorch_model.bin /root/model.pt
+# COPY ./model/pytorch_model.bin /root/model.pt
 COPY ./model/* /root/model/
 
-RUN pip install newsapi-python
+
+# RUN pip install newsapi-python
 
 # Copy over everything else into the container
 COPY ./api /root
 
 RUN ln -s /root/model.pt ./model/data/pyfunc_data/model.pt
-
-
 
 # Make our start script executable
 RUN ["chmod", "+x", "/root/start.sh"]

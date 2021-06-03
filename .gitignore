@@ -1,5 +1,4 @@
 # System Files
 .DS_Store
 Thumbs.db
-src/bert/model/*
 .idea
