@@ -1,7 +1,0 @@
-name: basemodel
-
-conda_env: conda.yml
-
-entry_points:
-  main:
-    command: "python predict.py"
