@@ -1,6 +1,6 @@
 build:
 
-	docker build -t bert_mlflow .
+	docker build -t electra_mlflow .
 run:
-	docker run --gpus all -it --rm --name bert_flask  -p 5000:5000 bert_mlflow
+	docker run --gpus all -it --rm --name electra_flask  -p 5000:5000 electra_mlflow
 
