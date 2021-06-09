@@ -16,7 +16,5 @@ make build
 make run
 ```
 
-The API is running and can by called from [this address](https://electra-ner-icelandic-gwafmrdfha-ez.a.run.app/)
-
 [Link to OpenAPI documentation](https://app.swaggerhub.com/apis/asmundur10/icelandic-ner-electra/1.0.0)
 
