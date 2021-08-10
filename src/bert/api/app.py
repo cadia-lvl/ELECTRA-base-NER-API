@@ -18,24 +18,26 @@ model = mlflow.pyfunc.load_model('./model')
 def home():
     return render_template('home.html')
 
+@app.route("/predict", methods=['POST'])
+def prediction():
+    text = request.json
+    print(text['text'])
+    return predict(text['text'])
 
-@app.route("/predict", methods=['GET', 'POST'])
+@app.route("/predict/impl", methods=['POST'])
 def predict():
 
     params = request.args.to_dict()
+    return predict(params['text'])
 
-    text = pd.DataFrame(data={'text': [params['text']]})
+def predict(inp_text):
+    text = pd.DataFrame(data={'text': [inp_text]})
 
     predictions = model.predict(text)
+    return jsonify({"response":{
+                    "type": "texts",
+                    "content":predictions}})
 
-
-    if request.method == 'GET':
-        return add_html_tags(predictions)
-
-    if request.method == 'POST':
-        return jsonify([predictions])
-
-    return ''
 
 
 
@@ -44,24 +46,6 @@ def predict():
 def headlines():
     return render_template("headlines.html")
 
-
-def add_html_tags(predictions):
-    html_text = ''
-    for i, (token, label) in enumerate(zip(*predictions)):
-        if token in ['[CLS]', '[SEP]']:
-            continue
-        if token[:2] == '##':
-            token = token[2:]
-        elif token in string.punctuation:
-            pass
-        else:
-            token = f" {token}"
-        if label != 'O':
-            html_text += f"<span class='{label.lower()}' title='{label}'>{token} </span>"
-        else:
-            html_text += f"{token}"
-
-    return html_text
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
