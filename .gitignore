@@ -2,4 +2,6 @@
 .DS_Store
 Thumbs.db
 .idea
-src/bert/model
+src/bert/model.ELECTRA
+src/bert/model.multilingual
+src/bert/model.IceBERT
