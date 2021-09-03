@@ -16,4 +16,5 @@ make build
 make run
 ```
 
+[Link to OpenAPI documentation](https://app.swaggerhub.com/apis/asmundur10/icelandic-ner-electra/1.0.0)
 
