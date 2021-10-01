@@ -37,10 +37,12 @@ class ModelWrapper():
 
         splits = text.split(' ')
         sequences = list(chunks(splits, self._MAX_LENGTH))
+        # print("SEQUENCES LEN: {}".format(len(sequences)))
         all_tokens = []
         all_predictions = []
+        # print(sequences)
         for sequence_splits in sequences:
-
+            # print('sequence_splits length: {}'.format(len(sequence_splits)))
             sequence = ' '.join(sequence_splits)
             try:
 
@@ -100,22 +102,36 @@ class ModelWrapper():
 
                 print(4 * 'o/ -CLOSING- \\o')
 
+            # print('SEQ')
+            # print(sequence)
             inputs = self._tokenizer.encode(sequence, return_tensors="pt")
-
+            # print('INPUTS')
+            # print(inputs)
             outputs = self._model(inputs)[0]
-
+            # print('outputs')
+            # print(outputs)
             predictions = torch.argmax(outputs, dim=2)
+            # print('predictions')
+            # print(predictions)
+
             outcomes = [self._label_dict[str(prediction)] for prediction in predictions[0].tolist()]
+            # print('outcomes')
+            # print(outcomes)
             outcomes = outcomes[1:-1]
             ids_to_remove.sort(reverse=True)
             # print(ids_to_remove)
+            # print('ids_to_remove')
+            # print(len(ids_to_remove))
+            # print(len(outcomes))
+            # print(ids_to_remove)
+
             for id in ids_to_remove:
                 del outcomes[id]
 
             all_predictions.extend(outcomes)
             all_tokens.extend(tokens)
 
-        return all_tokens, all_predictions
+        return [all_tokens, all_predictions]
 
     # def filter_tokens_tags(self, tokens, tags):
     #   filtered_tokens: List[Any] = []
@@ -273,6 +289,22 @@ class ModelWrapper():
             if text_sent != '':
                 text_sents.append(text_sent)
 
+
+        # lengths = []
+        # for sent in text_sents:
+        #     # print('sent:')
+        #     # print(sent)
+        #     splits = sent.split(' ')
+        #     lengths.append(len(splits))
+        # raw_tagged_sents = self.predict_sent(' \n'.join(text_sents))
+
+        #
+        # for length in lengths:
+        #     tokens = raw_tagged_sents[0][:length]
+        #     tags = raw_tagged_sents[1][:length]
+        #     tagged_sents.append((tokens, tags))
+        #     raw_tagged_sents[0] = raw_tagged_sents[0][length:]
+        #     raw_tagged_sents[1] = raw_tagged_sents[1][length:]
         tagged_sents = []
         for sent in text_sents:
             tagged_sent = self.predict_sent(sent)
@@ -283,8 +315,9 @@ class ModelWrapper():
             for token, tag in zip(sent[0], sent[1]):
                 conll_strings.append('{}\t{}\n'.format(token, tag))
             conll_strings.append('\n')
-
-        return ''.join(conll_strings)
+        return_string = ''.join(conll_strings)
+        # return_string += '\n'
+        return return_string
 
 
 def _load_pyfunc(path):
@@ -308,7 +341,7 @@ def _load_pyfunc(path):
 
         # continue if file not found
 
-    max_length = 360
+    max_length = 512
     # max_length -= tokenizer.num_special_tokens_to_add()
 
     # Load in the config file for label mapping

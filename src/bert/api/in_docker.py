@@ -27,10 +27,6 @@ def translate_path(path):
     :return: A string representing a path on the host (or the original path if the path is not in a bound volume)
     """
     binds = get_binds()
-    # print('Binds: ')
-    # print(binds)
-    # print('binds[path]')
-    # print(binds[path])
     if path in binds.keys():
         return binds[path]
     exps = ['(%s)/(.*)' % key for key in binds.keys()]

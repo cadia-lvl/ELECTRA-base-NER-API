@@ -20,6 +20,7 @@ app = Flask(__name__)
 model1 = mlflow.pyfunc.load_model('./model1')
 model2 = mlflow.pyfunc.load_model('./model2')
 model3 = mlflow.pyfunc.load_model('./model3')
+model4 = mlflow.pyfunc.load_model('./model4')
 print('-=-=-Models initialized-=-=-')
 docker_client = docker.from_env()
 print('-=-=-Docker client initialized-=-=-')
@@ -65,6 +66,12 @@ def predict_model3(text, folder_name):
     save_annotated_to_file(annotated_text, folder_name, "third_file")
 
 
+def predict_model4(text, folder_name):
+    print('MODEL4')
+    annotated_text = model4.predict_for_conllfile(text)
+    save_annotated_to_file(annotated_text, folder_name, "fourth_file")
+
+
 def save_annotated_to_file(text, folder_name, model_name):
     with open("{}/{}".format(folder_name, model_name), "w") as text_file:
         text_file.write(text)
@@ -82,18 +89,12 @@ def predict_ensamble():
     temp_dir = tempfile.TemporaryDirectory()
     temp_dir_name = temp_dir.name
     absolute_temp_dir_path = translate_path(temp_dir_name)
-    # TODO: Investigate if possible to run the three models in parallel
-    # threads = [Process(target=predict_model1(), args=[text, temp_dir_name]), Process(target=predict_model2(), args=[text, temp_dir_name]), Process(target=predict_model3(), args=[text, temp_dir_name])]
-    # threads = [Process(target=predict_model1(text, temp_dir_name)), Process(target=predict_model2(text, temp_dir_name)), Process(target=predict_model3(text, temp_dir_name))]
-    # for thread in threads:
-    #     thread.start()
-    # for thread in threads:  # Waits for threads to complete before moving on with the main script.
-    #     thread.join()
+
     predict_model1(text, temp_dir_name)
     predict_model2(text, temp_dir_name)
     predict_model3(text, temp_dir_name)
-
-    os.system('docker run -it --rm -v {}/:/Data asmundur1/combitagger:0.2'.format(absolute_temp_dir_path))
+    predict_model4(text, temp_dir_name)
+    os.system('docker run -it --rm -v {}/:/Data asmundur1/combitagger:4taggers'.format(absolute_temp_dir_path))
     os.system(
         "awk -v OFS='\t' 'NR>1{{ print $1, $NF }}' {0}/output.txt > {0}/filtered_output.txt".format(temp_dir_name))
 

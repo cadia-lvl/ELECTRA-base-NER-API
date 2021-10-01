@@ -66,10 +66,10 @@ RUN /bin/bash -c "source activate mlflow-env-bert" && \
 # Download trained BERT pytorch model
 # RUN wget 'https://aisc-mlops-bert.s3.amazonaws.com/model.pt' -O /root/model.pt -nc
 # COPY ./model/pytorch_model.bin /root/model.pt
-COPY ./model.ELECTRA/* /root/model1/data/pyfunc_data/
-COPY ./model.multilingual/* /root/model2/data/pyfunc_data/
-COPY ./model.IceBERT/* /root/model3/data/pyfunc_data/
-
+COPY ./model.IceBERT/* /root/model1/data/pyfunc_data/
+COPY ./model.ELECTRA /root/model2/data/pyfunc_data
+COPY ./model.convbert-small/* /root/model3/data/pyfunc_data/
+COPY ./model.multilingual/* /root/model4/data/pyfunc_data/
 
 # RUN pip install newsapi-python
 
@@ -87,6 +87,8 @@ RUN ln -s /root/model/code /root/model2/code
 RUN ln -s /root/model/MLmodel /root/model3/MLmodel
 RUN ln -s /root/model/code /root/model3/code
 
+RUN ln -s /root/model/MLmodel /root/model4/MLmodel
+RUN ln -s /root/model/code /root/model4/code
 
 
 # Make our start script executable

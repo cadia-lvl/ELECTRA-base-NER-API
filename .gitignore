@@ -5,3 +5,4 @@ Thumbs.db
 src/bert/model.ELECTRA
 src/bert/model.multilingual
 src/bert/model.IceBERT
+src/bert/model.convbert-small
