@@ -77,7 +77,7 @@ def save_annotated_to_file(text, folder_name, model_name):
         text_file.write(text)
 
 
-@app.route('/predict_ensamble', methods=['GET'])
+@app.route('/predict_ensamble', methods=['POST'])
 def predict_ensamble():
     if 'file' not in request.files:
         return ''
@@ -86,22 +86,27 @@ def predict_ensamble():
     if not text[-2:] == '\n\n':
         text += '\n'
 
-    temp_dir = tempfile.TemporaryDirectory()
-    temp_dir_name = temp_dir.name
-    absolute_temp_dir_path = translate_path(temp_dir_name)
+    # temp_dir = tempfile.TemporaryDirectory()
+    # temp_dir_name = temp_dir.name
+    # absolute_temp_dir_path = translate_path(temp_dir_name)
 
-    predict_model1(text, temp_dir_name)
-    predict_model2(text, temp_dir_name)
-    predict_model3(text, temp_dir_name)
-    predict_model4(text, temp_dir_name)
-    os.system('docker run -it --rm -v {}/:/Data asmundur1/combitagger:4taggers'.format(absolute_temp_dir_path))
-    os.system(
-        "awk -v OFS='\t' 'NR>1{{ print $1, $NF }}' {0}/output.txt > {0}/filtered_output.txt".format(temp_dir_name))
+    preds1 = model1.predict_for_conllfile(text)
+    preds2 = model2.predict_for_conllfile(text)
+    preds3 = model3.predict_for_conllfile(text)
+    preds4 = model4.predict_for_conllfile(text)
 
-    with open(temp_dir_name + '/' + 'filtered_output.txt', 'r') as file:
-        output_text = file.read()
+    print('model1 output length : {}'.format(len(preds1)))
+    print('model2 output length : {}'.format(len(preds2)))
+    print('model3 output length : {}'.format(len(preds3)))
+    print('model4 output length : {}'.format(len(preds4)))
+    # # os.system('docker run -it --rm -v {}/:/Data asmundur1/combitagger:4taggers'.format(absolute_temp_dir_path))
+    # # os.system(
+    # #     "awk -v OFS='\t' 'NR>1{{ print $1, $NF }}' {0}/output.txt > {0}/filtered_output.txt".format(temp_dir_name))
+    #
+    # with open(temp_dir_name + '/' + 'filtered_output.txt', 'r') as file:
+    #     output_text = file.read()
 
-    return output_text
+    return preds1
 
 
 @app.route('/predict_conll', methods=['GET', 'POST'])
