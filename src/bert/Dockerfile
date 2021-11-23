@@ -27,10 +27,10 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
 	apt-get autoremove && \
 	rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-17.04.0-ce.tgz \
-  && tar xzvf docker-17.04.0-ce.tgz \
-  && mv docker/docker /usr/local/bin \
-  && rm -r docker docker-17.04.0-ce.tgz
+# RUN curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-17.04.0-ce.tgz \
+#   && tar xzvf docker-17.04.0-ce.tgz \
+#   && mv docker/docker /usr/local/bin \
+#   && rm -r docker docker-17.04.0-ce.tgz
 
 
 # Install Miniconda
@@ -42,10 +42,10 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 ENV PATH /root/miniconda/bin:$PATH
 
 # Serving environment
-FROM conda-env 
+FROM conda-env
 
 # Copy over dependency file to cache (hopefully) core packages
-COPY ./api/model/mlflow_env.yml /root/mlflow_env.yml 
+COPY ./api/model/mlflow_env.yml /root/mlflow_env.yml
 
 
 # Create a conda environment from the specified conda.yaml
@@ -53,7 +53,7 @@ RUN conda env create --file /root/mlflow_env.yml
 
 # Add to .bashrc
 RUN echo "source activate mlflow-env-bert" >> .bashrc
-RUN apt-get update && apt-get -y --no-install-recommends install docker
+# RUN apt-get update && apt-get -y --no-install-recommends install docker
 
 COPY ./api/requirements.txt /root/requirements.txt
 
@@ -94,7 +94,7 @@ RUN ln -s /root/model/code /root/model4/code
 # Make our start script executable
 RUN ["chmod", "+x", "/root/start.sh"]
 
-EXPOSE 80 5000
+EXPOSE 80 $PORT
 
 # Start the API
 ENTRYPOINT [ "/root/start.sh" ]

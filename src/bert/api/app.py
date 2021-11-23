@@ -4,7 +4,7 @@ import mlflow.pyfunc
 import pandas as pd
 from multiprocessing import Process
 
-import docker
+# import docker
 import tempfile
 
 import requests
@@ -22,7 +22,7 @@ model2 = mlflow.pyfunc.load_model('./model2')
 model3 = mlflow.pyfunc.load_model('./model3')
 model4 = mlflow.pyfunc.load_model('./model4')
 print('-=-=-Models initialized-=-=-')
-docker_client = docker.from_env()
+# docker_client = docker.from_env()
 print('-=-=-Docker client initialized-=-=-')
 
 
@@ -147,4 +147,4 @@ def add_html_tags(predictions):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
