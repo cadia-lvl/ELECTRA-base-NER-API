@@ -16,7 +16,7 @@ model = mlflow.pyfunc.load_model('./model')
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return ""
 
 @app.route("/predict", methods=['POST'])
 def prediction():
