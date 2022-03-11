@@ -1,40 +1,8 @@
 # Create common environment for training and serving BERT
+FROM continuumio/miniconda3
 
 
-
-# FROM ubuntu:18.04 AS conda-env
-
-FROM nvidia/cuda:10.2-cudnn7-devel AS conda-env
-CMD nvidia-smi
-# Set character encoding environment variables
-ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
-
-# Allow apt-get install without interaction from console
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Set the working directory to /root
 WORKDIR /root
-
-# System updates and configurations
-RUN apt-get update && apt-get -y --no-install-recommends install \
-		ca-certificates \
-		git \
-		ssh \
-		wget && \
-	apt-get clean && \
-	apt-get autoremove && \
-	rm -rf /var/lib/apt/lists/*
-
-# Install Miniconda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-	bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda && \
-	rm Miniconda3-latest-Linux-x86_64.sh
-
-# Set the path env to include miniconda
-ENV PATH /root/miniconda/bin:$PATH
-
-# Serving environment
-FROM conda-env 
 
 # Copy over dependency file to cache (hopefully) core packages
 COPY ./api/model/mlflow_env.yml /root/mlflow_env.yml 
@@ -57,21 +25,20 @@ RUN /bin/bash -c "source activate mlflow-env-bert" && \
 
 # Download trained BERT pytorch model
 # RUN wget 'https://aisc-mlops-bert.s3.amazonaws.com/model.pt' -O /root/model.pt -nc
-# COPY ./model/pytorch_model.bin /root/model.pt
 COPY ./model/* /root/model/
 
 
-# RUN pip install newsapi-python
 
-# Copy over everything else into the container
+# Copy api to root
 COPY ./api /root
 
+# link model
 RUN ln -s /root/model.pt ./model/data/pyfunc_data/model.pt
 
 # Make our start script executable
-RUN ["chmod", "+x", "/root/start.sh"]
+#RUN ["chmod", "+x", "/root/start.sh"]
 
-EXPOSE 80 5000
+EXPOSE 8080
 
 # Start the API
 ENTRYPOINT [ "/root/start.sh" ]
