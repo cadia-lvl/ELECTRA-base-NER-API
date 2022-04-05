@@ -21,6 +21,6 @@ Input = [{}, {'type':'text'}, {'type':'text', 'content':""}]
 for inp in Input:
 		print("INP:",inp)
 		r = requests.post("http://localhost:8080"+LOC, json=inp);
-		print(r.text)
-		json.loads(r.text)
+		print(r.content.decode("utf-8"))
+		json.loads(r.content.decode("utf-8"))
 
