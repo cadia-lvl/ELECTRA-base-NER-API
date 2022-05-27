@@ -18,3 +18,15 @@ make run
 
 [Link to OpenAPI documentation](https://app.swaggerhub.com/apis/asmundur10/icelandic-ner-electra/1.0.0)
 
+
+## API calls
+All the API calls use post and input/outputs are in a json format.
+Further details about the api calls are automatically generated when the container is run and can be found in /docs or /redoc
+
+| HTTP METHOD | Description |
+| ----------- | --------------- |
+| /predict | Takes in Icelandic text |
+
+# Acknowledgements
+This ELG API was developed in EU's CEF project: [Microservices at your service](https://www.lingsoft.fi/en/microservices-at-your-service-bridging-gap-between-nlp-research-and-industry)
+
