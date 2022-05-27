@@ -28,5 +28,7 @@ Further details about the api calls are automatically generated when the contain
 | /predict | Takes in Icelandic text and returns text with icelandic named entetiy recognition |
 
 # Acknowledgements
+[Reykjavik University](https://lvl.ru.is)
+
 This ELG API was developed in EU's CEF project: [Microservices at your service](https://www.lingsoft.fi/en/microservices-at-your-service-bridging-gap-between-nlp-research-and-industry)
 
