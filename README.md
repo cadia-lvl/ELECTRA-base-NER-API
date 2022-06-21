@@ -37,3 +37,5 @@ test files can be found in `tests/`. There are two tests that can be performed.
 
 This ELG API was developed in EU's CEF project: [Microservices at your service](https://www.lingsoft.fi/en/microservices-at-your-service-bridging-gap-between-nlp-research-and-industry)
 
+# Underlying tool
+The underlying Named Entity Recognizer is [NER for AISC ML Ops](https://github.com/tadyshev/ner) by [dmitriy](https://github.com/tadyshev), which is licensed under this [MIT license](https://github.com/tadyshev/ner/blob/master/LICENSE). The original Icelandic NER API in the master branch of this repository was a minor modification to the underlying tool. Then the project was updated to conform to the ELG API standard. This version of [Icelandic NER API](https://github.com/cadia-lvl/Icelandic-NER-API/tree/elg-standard) is copied into the docker image when it is built. 
