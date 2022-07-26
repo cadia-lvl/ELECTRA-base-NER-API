@@ -2,7 +2,7 @@
 
 This project is a minor modification to https://github.com/ditadi/ner
 
-A docterized and deployable Named Entity Recognition tool for Icelandic, using a ELECTRA-base Icelandic langauge fined tuned for NER on the MIM-GOLD-NER corpus. 
+A dockerized and deployable Named Entity Recognition tool for Icelandic, using a ELECTRA-base Icelandic language model fined tuned for NER on the MIM-GOLD-NER corpus. 
 
 
 1) Make sure that Docker is properly installed
