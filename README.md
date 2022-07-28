@@ -2,7 +2,7 @@
 
 This project is a minor modification to https://github.com/ditadi/ner
 
-A dockerized and deployable Named Entity Recognition tool for Icelandic, using a faster IceBERT model, but also offers the possibilty of using a combination of 4 Transformer models that together achieve a better F-Score on the test set for the MIM-GOLD-NER corpus, which all of them were fine tuned on. 
+A dockerized and deployable Named Entity Recognition tool for Icelandic, using the [IceBERT](https://huggingface.co/mideind/IceBERT-igc/tree/main) model, which also offers the possibilty of using a combination of 4 Transformer models that together achieve a better F-Score on the test set for the MIM-GOLD-NER corpus, which all of them were fine tuned on. 
 
 
 1) Make sure that Docker is properly installed
