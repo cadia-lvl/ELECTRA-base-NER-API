@@ -1,0 +1,17 @@
+Beginning-Date
+Beginning-Location
+Beginning-Miscellaneous
+Beginning-Money
+Beginning-Organization
+Beginning-Percent
+Beginning-Person
+Beginning-Time
+Inside-Date
+Inside-Location
+Inside-Miscellaneous
+Inside-Money
+Inside-Organization
+Inside-Percent
+Inside-Person
+Inside-Time
+Outside

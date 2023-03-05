@@ -1,356 +1,102 @@
-import os
-import time
-from typing import List, Any
-
 import torch
 import json
-# from datasets import load_dataset
-
-import traceback
-
 
 def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
+  """Yield successive n-sized chunks from lst."""
 
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
+  for i in range(0, len(lst), n):
+    yield lst[i:i + n]
 
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
+def post_process(sequence, tokens, offset_mappings, outcomes):
+  def remove_index(index, tokens, outcomes):
+    assert index > 0
+    removed_token = tokens.pop(index)
+    tokens[index - 1] += removed_token
+    # this code assumes the model is smart enough to classify each token
+    # when a word is broken up into smaller tokens, with the same tag.
+    # but may require testing, the following code may help with that.
+    # TEST CODE BELOW
+    # removed_outcome = outcomes.pop(index)
+    # assert outcomes[index-1] == removed_outcome
+    # ATTENTION, MAKE SURE TO COMMENT OUT outcomes.pop(index) HERE BELOW
+    # IF USING THE COMMENTED OUT TEST CODE HERE ABOVE
+    outcomes.pop(index)
 
-# from tokenizers import ByteLevelBPETokenizer
+  def fix_tokens(indices, sequence, tokens, offset_mappings):
+    for i in indices:
+      lower_bound, upper_bound = offset_mappings[i]
+      tokens[i] = sequence[lower_bound:upper_bound]
 
+  # find the indices of the extra tokens, if it begins in the same index as the
+  # previous item, (offset_mapping), it's either a punctuation, or, an 'extra-token',
+  # and then you distinguish between the two because the length of the extra token
+  # is longer than the length of its corresponding offset map.
+  indices = [i for i, (a, b) in enumerate(offset_mappings) if
+             i > 0 and a == offset_mappings[i - 1][1] and
+             offset_mappings[i - 1][1] - offset_mappings[i - 1][0] != 0 and
+             len(tokens[i]) != offset_mappings[i][1] - offset_mappings[i][0]]
+  fix_tokens(indices, sequence, tokens, offset_mappings)
+  # remove indices from list in reversed order
+  for i in indices[::-1]:
+    remove_index(i, tokens, outcomes)
 
 class ModelWrapper():
-    def __init__(self, model, tokenizer, label_dict, max_length):
-        self._model = model
-        self._tokenizer = tokenizer
-        self._label_dict = label_dict
-        self._MAX_LENGTH = max_length
+  def __init__(self, model, tokenizer, label_dict, max_length):
+    self._model = model
+    self._tokenizer = tokenizer
+    self._label_dict = label_dict
+    self._MAX_LENGTH = max_length
 
-    def predict(self, data):
-        text = data.iloc[0]['text']
-        return self.predict_sent(text)
+  def predict(self, data):
+    text = data.iloc[0]['text']
+    splits = text.split(' ')
+    sequences = list(chunks(splits, self._MAX_LENGTH))
+    all_tokens = []
+    all_predictions = []
+    print(len(sequences))
+    for sequence_splits in sequences:
 
-    def predict_sent(self, text):
+      sequence = ' '.join(sequence_splits)
+      tokens = self._tokenizer.tokenize(self._tokenizer.decode(self._tokenizer.encode(sequence)))
+      encoded_data = self._tokenizer.encode_plus(sequence, return_tensors="pt", add_special_tokens=True,
+                                                 max_length=self._MAX_LENGTH,
+                                                 return_offsets_mapping=True)
+      inputs = encoded_data['input_ids']
 
-        splits = text.split(' ')
-        sequences = list(chunks(splits, self._MAX_LENGTH))
-        # print("SEQUENCES LEN: {}".format(len(sequences)))
-        all_tokens = []
-        all_predictions = []
-        # print(sequences)
-        for sequence_splits in sequences:
-            # print('sequence_splits length: {}'.format(len(sequence_splits)))
-            sequence = ' '.join(sequence_splits)
-            try:
+      outputs = self._model(inputs)[0]
 
-                ids_to_remove = []
-                encoded_seq = self._tokenizer(sequence, return_offsets_mapping=True, add_special_tokens=False)
-                unique_token_indices = []
-                token_indices = encoded_seq['offset_mapping']
-                seen = set()
-                # clean_offsets = []
-                for i in range(len(token_indices)):
-                    x = token_indices[i]
-                    if x not in seen:
-                        seen.add(x)
-                        unique_token_indices.append(x)
-                        # clean_offsets.append(x)
-                    else:
-                        ids_to_remove.append(i)
-                token_indices = unique_token_indices
-
-                tokens = []
-
-                # a variable that keeps track of the end index in the previous word
-                # to correct it when words are split up in the tokenization
-                last_end_index = -1
-
-                current_index = 0
-                for index in token_indices:
-                    token = sequence[index[0]: index[1]]
-
-                    if index[0] == last_end_index:
-
-                        last_list_index = len(tokens) - 1
-
-                        tokens[last_list_index] += token
-                        ids_to_remove.append(current_index)
-                    else:
-
-                        tokens.append(token)
-
-                    last_end_index = index[1]
-                    current_index += 1
+      predictions = torch.argmax(outputs, dim=2)
+      outcomes = [self._label_dict[str(prediction)] for prediction in predictions[0].tolist()]
+      offset_mappings_numpy = encoded_data['offset_mapping'].numpy()
+      offset_mappings = [tuple(x) for x in offset_mappings_numpy[0]]
+      post_process(sequence, tokens, offset_mappings, outcomes)
+      all_predictions.extend(outcomes)
+      all_tokens.extend(tokens)
 
 
-            except Exception as e:
-                print(4 * '\\o -TOKENIZATION ERROR- o/')
-                print('=' * 20)
-                print(super(type(e)))
-                print('-' * 20)
-                # tb = sys.exc_info()[2]
-                # print('-'*20)
+    return all_tokens, all_predictions
 
-                traceback.print_tb(e.__traceback__)
-                print('-' * 20)
-
-                print(sequence)
-                print('=' * 20)
-
-                print(4 * 'o/ -CLOSING- \\o')
-
-            # print('SEQ')
-            # print(sequence)
-            inputs = self._tokenizer.encode(sequence, return_tensors="pt")
-            # print('INPUTS')
-            # print(inputs)
-            outputs = self._model(inputs)[0]
-            # print('outputs')
-            # print(outputs)
-            predictions = torch.argmax(outputs, dim=2)
-            # print('predictions')
-            # print(predictions)
-
-            outcomes = [self._label_dict[str(prediction)] for prediction in predictions[0].tolist()]
-            # print('outcomes')
-            # print(outcomes)
-            outcomes = outcomes[1:-1]
-            ids_to_remove.sort(reverse=True)
-            # print(ids_to_remove)
-            # print('ids_to_remove')
-            # print(len(ids_to_remove))
-            # print(len(outcomes))
-            # print(ids_to_remove)
-
-            for id in ids_to_remove:
-                del outcomes[id]
-
-            all_predictions.extend(outcomes)
-            all_tokens.extend(tokens)
-
-        return [all_tokens, all_predictions]
-
-    # def filter_tokens_tags(self, tokens, tags):
-    #   filtered_tokens: List[Any] = []
-    #   filtered_tags = []
-    #   # print(tokens)
-    #   # print(tags)
-    #   # temp = list(zip(tokens, tags))
-    #   # print(temp)
-    #   for token, tag in zip(tokens, tags):
-    #     if token in ['[CLS]', '[SEP]']:
-    #       continue
-    #     elif token[:2] == '##':
-    #       if len(filtered_tokens) == 0 or '#' in token[2:] :
-    #         filtered_tokens.append(token)
-    #         filtered_tags.append(tag)
-    #       else:
-    #         #ADD VALIDATION HERE THAT TAGS ARE CORRECT
-    #         filtered_tokens[len(filtered_tokens) - 1] += token[2:]
-    #         print('FILTER_TOKENS')
-    #         print(tokens)
-    #     else:
-    #       filtered_tokens.append(token)
-    #       filtered_tags.append(tag)
-    #   # print(20 * 'XXXX')
-    #   # print(token)
-    #   # print(tag)
-    #   # print(20*'XXXX')
-    #   # print(filtered_tokens)
-    #   # print(filtered_tags)
-    #   return filtered_tokens, filtered_tags
-
-    def get_token_from_conll_line(self, line):
-        return line.split('\t')[0]
-
-    def get_tag_from_conll_line(self, line):
-        return line.split('\t')[1]
-
-    def check_if_tag_same_type(self, tag1, tag2):
-        if len(tag1) != len(tag2):
-            return False
-        elif tag1 == tag2:
-            return True
-        else:
-            return tag1[2:] == tag2[2:]
-
-    # def correct_conll_sentence(self, correct_sent, model_sent):
-    #     correct_lines = correct_sent.split('\n')
-    #     model_lines = model_sent.split('\n')
-    #     extra_token_counter = 0
-    #     fixed_lines = []
-    #     for i in range(len(correct_lines)):
-    #         correct_line = correct_lines[i]
-    #         correct_token = self.get_token_from_conll_line(correct_line)
-    #         try:
-    #             model_line = model_lines[i + extra_token_counter]
-    #         except Exception as e:
-    #             print(4 * '\\o -MODEL LINE INDEX OUT OF RANGE- o/')
-    #             print('Correct lines : ')
-    #             print(correct_lines)
-    #             print('Model Lines : ')
-    #             print(model_lines)
-    #             print('Index : {}'.format(i))
-    #             print('Extra token counter : {}'.format(extra_token_counter))
-    #             print(4 * 'o/ -CLOSING- \\o')
-    #             return 'get_tag_ERROR\tO'
-    #
-    #         model_token = self.get_token_from_conll_line(model_line)
-    #         if correct_token == model_token:
-    #             fixed_lines.append(model_line)
-    #         else:
-    #             token_to_check = correct_token
-    #             try:
-    #                 first_guessed_tag = self.get_tag_from_conll_line(model_line)
-    #             except Exception as e:
-    #                 print(20 * '\\o -GET TAG ERROR- o/')
-    #                 print(model_sent)
-    #                 print(20 * 'o/ -CLOSING- \\o')
-    #                 return 'get_tag_ERROR\tO'
-    #
-    #             while len(token_to_check) > 0:
-    #                 # model_line = model_lines[i + extra_token_counter]
-    #                 try:
-    #                     model_line = model_lines[i + extra_token_counter]
-    #                 except Exception as e:
-    #                     print(4 * '\\o -TOKEN MERGING ERROR- o/')
-    #                     print('Correct lines : ')
-    #                     print(correct_lines)
-    #                     print('Model Lines : ')
-    #                     print(model_lines)
-    #                     print('Index : {}'.format(i))
-    #                     print('Extra token counter : {}'.format(extra_token_counter))
-    #                     print('token_to_check : {}'.format(token_to_check))
-    #                     print(4 * 'o/ -CLOSING- \\o')
-    #                     return 'get_tag_ERROR\tO'
-    #
-    #                 model_token = self.get_token_from_conll_line(model_line)
-    #                 if token_to_check[:len(model_token)] != model_token:
-    #                     print(4 * '\\o -ERROR- o/')
-    #                     return_string = 'Mismatching sents\nMismatching sents\nORIGINAL:\n{}\nMODEL_GUESS\n{}\nEND\n'.format(
-    #                         correct_sent, model_sent)
-    #                     print('Mismatching sents')
-    #                     print('ORIGINAL:')
-    #                     print(correct_sent)
-    #                     print('MODEL GUESS: ')
-    #                     print(model_sent)
-    #                     print(4 * 'o/ -CLOSING- \\o')
-    #                     return return_string
-    #                 else:
-    #                     tag = self.get_tag_from_conll_line(model_line)
-    #                     if not self.check_if_tag_same_type(first_guessed_tag, tag):
-    #                         print(4 * '\\o -TAGGING FAILURE- o/')
-    #                         print('Guessed:')
-    #                         print(model_sent)
-    #                         print('Correct:')
-    #                         print(correct_sent)
-    #                         print(4 * 'o/ -CLOSING- \\o')
-    #
-    #                     token_to_check = token_to_check[len(model_token):]
-    #                     if token_to_check != '':
-    #                         extra_token_counter += 1
-    #             fixed_lines.append('{}\t{}'.format(correct_token, first_guessed_tag))
-    #     return '\n'.join(fixed_lines)
-    #
-    # def correct_conll(self, correct_conll_string, model_output_conll_string):
-    #     correct_sents = correct_conll_string.split('\n\n')
-    #     model_sents = model_output_conll_string.split('\n\n')
-    #     fixed_sents = []
-    #     if len(correct_sents) != len(model_sents):
-    #         print(4 * '-WARNING-')
-    #         print('Inconsistent # of sents in input and output')
-    #         print('LENGTH RECIEVED : {}'.format(len(correct_sents)))
-    #         print('LENGTH EXPECTED : {}'.format(len(model_sents)))
-    #         print('MODEL SENTS : ')
-    #         print(model_sents)
-    #         print('CORRECT SENTS : ')
-    #         print(correct_sents)
-    #         print(4 * '-WARNING-')
-    #         print('\n\n\n')
-    #         return 'SENT\tINCONSISTENCY'
-    #     for correct_sent, model_sent in zip(correct_sents, model_sents):
-    #         fixed_sents.append(self.correct_conll_sentence(correct_sent, model_sent))
-    #     return '\n\n'.join(fixed_sents)
-
-    def predict_for_conllfile(self, file, label_all_tokens=True):
-
-        sents = file.split('\n\n')
-        text_sents = []
-        for sent in sents:
-            sent_tokens = []
-            token_tag_pairs = sent.split('\n')
-            for pair in token_tag_pairs:
-                token = pair.split('\t')[0]
-                sent_tokens.append(token)
-            text_sent = ' '.join(sent_tokens)
-            if text_sent != '':
-                text_sents.append(text_sent)
-
-
-        # lengths = []
-        # for sent in text_sents:
-        #     # print('sent:')
-        #     # print(sent)
-        #     splits = sent.split(' ')
-        #     lengths.append(len(splits))
-        # raw_tagged_sents = self.predict_sent(' \n'.join(text_sents))
-
-        #
-        # for length in lengths:
-        #     tokens = raw_tagged_sents[0][:length]
-        #     tags = raw_tagged_sents[1][:length]
-        #     tagged_sents.append((tokens, tags))
-        #     raw_tagged_sents[0] = raw_tagged_sents[0][length:]
-        #     raw_tagged_sents[1] = raw_tagged_sents[1][length:]
-        tagged_sents = []
-        for sent in text_sents:
-            tagged_sent = self.predict_sent(sent)
-            tagged_sents.append(tagged_sent)
-
-        conll_strings = []
-        for sent in tagged_sents:
-            for token, tag in zip(sent[0], sent[1]):
-                conll_strings.append('{}\t{}\n'.format(token, tag))
-            conll_strings.append('\n')
-        return_string = ''.join(conll_strings)
-        # return_string += '\n'
-        return return_string
 
 
 def _load_pyfunc(path):
-    # model = AutoModelForTokenClassification.from_pretrained('/root/model/')
-    model = AutoModelForTokenClassification.from_pretrained(path)
-    # Load in the tokenizer
-    print(path)
-    # tokenizer = AutoTokenizer.from_pretrained('/root/model/')
-    try:
-        with open(path + '/config.json', 'r') as f:
-            model_type = json.load(f)['model_type']
-            if model_type == 'roberta':
-                tokenizer = AutoTokenizer.from_pretrained(path)
-            else:
-                tokenizer = AutoTokenizer.from_pretrained(path)
-    except Exception:
-        print('Failed to initialize tokenizer. Trying to pull from remote')
-        with open(path + '/config.json', 'r') as f:
-            name = json.load(f)['_name_or_path']
-            tokenizer = AutoTokenizer.from_pretrained(name)
+  model = AutoModelForTokenClassification.from_pretrained('/root/model/')
 
-        # continue if file not found
+  # Load in the tokenizer
+  tokenizer = AutoTokenizer.from_pretrained('/root/model/')
 
-    max_length = 512
-    # max_length -= tokenizer.num_special_tokens_to_add()
+  max_length = 360
+  # max_length -= tokenizer.num_special_tokens_to_add()
 
-    # Load in the config file for label mapping
-    with open(path + '/config.json', 'r') as f:
-        label_dict = json.load(f)['id2label']
+  # Load in the config file for label mapping
+  with open('/root/model/config.json', 'r') as f:
+    label_dict = json.load(f)['id2label']
 
-    return ModelWrapper(
-        model=model,
-        tokenizer=tokenizer,
-        label_dict=label_dict,
-        max_length=max_length
-    )
+
+  return ModelWrapper(
+      model=model,
+      tokenizer=tokenizer,
+      label_dict=label_dict,
+      max_length=max_length
+  )

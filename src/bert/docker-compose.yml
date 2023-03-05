@@ -1,0 +1,19 @@
+#
+# See template.env for instructions
+#
+version: "3.7"
+
+services:
+  ltservice:
+    image: "${LTSERVICE_IMAGE}"
+    restart: always
+
+  restserver:
+    image: registry.gitlab.com/european-language-grid/ilsp/elg-lt-service-execution-all:production-reactive
+    command:
+    - "--logging.level.elg.ltserviceexecution.api=WARN"
+    - "--elg.ltservices.staticServices.service=http://ltservice:${LTSERVICE_PORT}${LTSERVICE_PATH}"
+    - "--elg.base.url=http://localhost:${EXPOSE_PORT}"
+    ports:
+    - "${EXPOSE_PORT}:8080"
+    restart: always
